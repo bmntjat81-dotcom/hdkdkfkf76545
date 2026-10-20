@@ -44,13 +44,25 @@ jobs:
           
           cache: gradle
           
+      - name: Locate Android SDK tools
+      
+        run: |
+        
+          SDKMANAGER=$(find "$ANDROID_HOME" /usr/local/lib/android/sdk -type f -name sdkmanager 2>/dev/null | head -1)
+          
+          test -n "$SDKMANAGER"
+          
+          echo "SDKMANAGER=$SDKMANAGER" >> "$GITHUB_ENV"
+          
+          echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
+          
       - name: Accept Android licenses
       
-        run: yes | sdkmanager --licenses > /dev/null || true
+        run: yes | "$SDKMANAGER" --licenses > /dev/null || true
         
       - name: Install Android SDK packages
       
-        run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+        run: "$SDKMANAGER" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
         
       - name: Build debug APK
       
@@ -71,6 +83,12 @@ jobs:
           if-no-files-found: error
           
           retention-days: 14
+
+
+
+
+
+
 
 
 
