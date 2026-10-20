@@ -34,7 +34,7 @@ jobs:
         
       - name: Set up JDK 17
       
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         
         with:
         
@@ -44,9 +44,9 @@ jobs:
           
           cache: gradle
           
-      - name: Set up Android SDK
+      - name: Accept Android licenses
       
-        uses: android-actions/setup-android@v3
+        run: yes | sdkmanager --licenses > /dev/null || true
         
       - name: Install Android SDK packages
       
