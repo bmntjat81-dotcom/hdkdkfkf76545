@@ -21,6 +21,9 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: gradle
+      - name: Align Java and Kotlin targets
+        run: |
+          sed -i 's/VERSION_1_8/VERSION_17/g; s/jvmTarget *= *"1.8"/jvmTarget = "17"/g' alf-non-native/app/build.gradle
       - name: Locate Android SDK tools
         run: |
           SDKMANAGER=$(find $ANDROID_HOME /usr/local/lib/android/sdk -type f -name sdkmanager 2>/dev/null | head -1)
