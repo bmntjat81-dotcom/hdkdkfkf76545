@@ -1,165 +1,64 @@
 name: Build Android APK from archive
-
 on:
-
   workflow_dispatch:
-  
   push:
-  
     branches: [ "main" ]
-    
 jobs:
-
   build:
-  
     runs-on: ubuntu-latest
-    
     permissions:
-    
       contents: read
-      
     steps:
-    
       - name: Checkout
-      
         uses: actions/checkout@v4
-        
       - name: Unpack source
-      
         run: unzip -q alf-non-native-project.zip
-        
       - name: Set up JDK 17
-      
         uses: actions/setup-java@v5
-        
         with:
-        
           distribution: temurin
-          
           java-version: '17'
-          
           cache: gradle
-          
-      - name: Align Java, Kotlin, and KSP targets
-      
+      - name: Apply reviewed Kotlin and JVM fixes
         run: |
-        
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('alf-non-native/app/src/main/java/com/alfnon/platform/data/SupabaseAuthBridge.kt')
+          s = p.read_text()
+          s = s.replace('put("role", role.name.lowercase()) })', 'put("role", role.name.lowercase()) }.toString())')
+          p.write_text(s)
+          PY
           cat >> alf-non-native/app/build.gradle <<'EOF'
-          
           android {
-          
               compileOptions {
-              
                   sourceCompatibility JavaVersion.VERSION_17
-                  
                   targetCompatibility JavaVersion.VERSION_17
-                  
               }
-              
               kotlinOptions {
-              
                   jvmTarget = '17'
-                  
+                  freeCompilerArgs += ['-opt-in=androidx.compose.material3.ExperimentalMaterial3Api']
               }
-              
           }
-          
           EOF
-          
       - name: Locate Android SDK tools
-      
         run: |
-        
           SDKMANAGER=$(find $ANDROID_HOME /usr/local/lib/android/sdk -type f -name sdkmanager 2>/dev/null | head -1)
-          
           test -n "$SDKMANAGER"
-          
           echo "SDKMANAGER=$SDKMANAGER" >> "$GITHUB_ENV"
-          
           echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
-          
       - name: Accept Android licenses
-      
         run: |
-        
           yes | "$SDKMANAGER" --licenses > /dev/null || true
-          
       - name: Install Android SDK packages
-      
         run: |
-        
           "$SDKMANAGER" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
-          
       - name: Build debug APK
-      
         working-directory: alf-non-native
-        
         run: chmod +x ./gradlew && ./gradlew assembleDebug --no-daemon
-        
       - name: Upload APK
-      
         uses: actions/upload-artifact@v4
-        
         with:
-        
           name: alf-non-debug-apk
-          
           path: alf-non-native/app/build/outputs/apk/debug/app-debug.apk
-          
           if-no-files-found: error
-          
           retention-days: 14
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
