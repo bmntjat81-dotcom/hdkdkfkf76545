@@ -49,7 +49,16 @@ jobs:
           vm = root / 'AppViewModel.kt'
           s = vm.read_text()
           old = '    fun chooseRole(role: UserRole) { _screen.value = AppScreen.Login(role) }'
-          extra = nl + '    fun goBack() {' + nl + '        when (val current = _screen.value) {' + nl + '            AppScreen.Welcome -> Unit' + nl + '            AppScreen.RolePicker -> _screen.value = AppScreen.Welcome' + nl + '            is AppScreen.Login -> _screen.value = AppScreen.RolePicker' + nl + '            is AppScreen.Dashboard -> Unit' + nl + '            is AppScreen.ModuleScreen -> _screen.value = AppScreen.Dashboard(current.role, current.name)' + nl + '        }' + nl + '    }'
+          extra = (
+              nl + '    fun goBack() {' + nl +
+              '        when (val current = _screen.value) {' + nl +
+              '            AppScreen.Welcome -> Unit' + nl +
+              '            AppScreen.RolePicker -> _screen.value = AppScreen.Welcome' + nl +
+              '            is AppScreen.Login -> _screen.value = AppScreen.RolePicker' + nl +
+              '            is AppScreen.Dashboard -> Unit' + nl +
+              '            is AppScreen.ModuleScreen -> _screen.value = AppScreen.Dashboard(current.role, current.name)' + nl +
+              '        }' + nl + '    }'
+          )
           s = s.replace(old, old + extra)
           vm.write_text(s)
           p = root / 'MainActivity.kt'
@@ -78,10 +87,3 @@ jobs:
       - name: Build debug APK
         working-directory: alf-non-native
         run: chmod +x ./gradlew && ./gradlew assembleDebug --no-daemon
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: alf-non-debug-apk
-          path: alf-non-native/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
-          retention-days: 14
