@@ -77,13 +77,19 @@ jobs:
       - name: Locate Android SDK tools
         run: |
           SDKMANAGER=$(find $ANDROID_HOME /usr/local/lib/android/sdk -type f -name sdkmanager 2>/dev/null | head -1)
-          test -n "$SDKMANAGER"
-          echo "SDKMANAGER=$SDKMANAGER" >> "$GITHUB_ENV"
-          echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
       - name: Accept Android licenses
-        run: yes | "$SDKMANAGER" --licenses > /dev/null || true
+        run: |
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
       - name: Install Android SDK packages
-        run: "$SDKMANAGER" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+        run: |
+          "$SDKMANAGER" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
       - name: Build debug APK
         working-directory: alf-non-native
         run: chmod +x ./gradlew && ./gradlew assembleDebug --no-daemon
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: alf-non-debug-apk
+          path: alf-non-native/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
