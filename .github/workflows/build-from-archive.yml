@@ -45,37 +45,24 @@ jobs:
           python3 - <<'PY2'
           from pathlib import Path
           root = Path('alf-non-native/app/src/main/java/com/alfnon/platform')
+          nl = chr(10)
           vm = root / 'AppViewModel.kt'
           s = vm.read_text()
-          s = s.replace('    fun chooseRole(role: UserRole) { _screen.value = AppScreen.Login(role) }', '''    fun chooseRole(role: UserRole) { _screen.value = AppScreen.Login(role) }
-    fun goBack() {
-        when (val current = _screen.value) {
-            AppScreen.Welcome -> Unit
-            AppScreen.RolePicker -> _screen.value = AppScreen.Welcome
-            is AppScreen.Login -> _screen.value = AppScreen.RolePicker
-            is AppScreen.Dashboard -> Unit
-            is AppScreen.ModuleScreen -> _screen.value = AppScreen.Dashboard(current.role, current.name)
-        }
-    }''')
+          old = '    fun chooseRole(role: UserRole) { _screen.value = AppScreen.Login(role) }'
+          extra = nl + '    fun goBack() {' + nl + '        when (val current = _screen.value) {' + nl + '            AppScreen.Welcome -> Unit' + nl + '            AppScreen.RolePicker -> _screen.value = AppScreen.Welcome' + nl + '            is AppScreen.Login -> _screen.value = AppScreen.RolePicker' + nl + '            is AppScreen.Dashboard -> Unit' + nl + '            is AppScreen.ModuleScreen -> _screen.value = AppScreen.Dashboard(current.role, current.name)' + nl + '        }' + nl + '    }'
+          s = s.replace(old, old + extra)
           vm.write_text(s)
           p = root / 'MainActivity.kt'
           s = p.read_text()
-          s = s.replace('import android.os.Bundle\n', 'import android.os.Bundle\nimport androidx.activity.compose.BackHandler\n')
+          s = s.replace('import android.os.Bundle' + nl, 'import android.os.Bundle' + nl + 'import androidx.activity.compose.BackHandler' + nl)
           s = s.replace('AppScreen.RolePicker -> RolePickerScreen(onRole = vm::chooseRole)', 'AppScreen.RolePicker -> RolePickerScreen(onRole = vm::chooseRole, onBack = vm::goBack)')
           s = s.replace('is AppScreen.Login -> LoginScreen(role = current.role, onLogin = vm::login)', 'is AppScreen.Login -> LoginScreen(role = current.role, onLogin = vm::login, onBack = vm::goBack)')
-          s = s.replace('                when (val current = screen) {', '                BackHandler(enabled = screen !is AppScreen.Welcome) { vm.goBack() }\n                when (val current = screen) {')
+          s = s.replace('                when (val current = screen) {', '                BackHandler(enabled = screen !is AppScreen.Welcome) { vm.goBack() }' + nl + '                when (val current = screen) {')
           s = s.replace('private fun RolePickerScreen(onRole: (UserRole) -> Unit) {', 'private fun RolePickerScreen(onRole: (UserRole) -> Unit, onBack: () -> Unit) {')
           s = s.replace('private fun LoginScreen(role: UserRole, onLogin: (UserRole, String, String) -> Boolean) {', 'private fun LoginScreen(role: UserRole, onLogin: (UserRole, String, String) -> Boolean, onBack: () -> Unit) {')
-          p.write_text(s)
-          PY2
-      - name: Add visible back buttons
-        run: |
-          python3 - <<'PY2'
-          from pathlib import Path
-          p = Path('alf-non-native/app/src/main/java/com/alfnon/platform/MainActivity.kt')
-          s = p.read_text()
-          s = s.replace('Column(Modifier.fillMaxSize().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {', 'Column(Modifier.fillMaxSize().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {\n        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) { TextButton(onClick = onBack) { Text("رجوع", color = Gold) } }')
-          s = s.replace('Column(Modifier.fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {', 'Column(Modifier.fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {\n        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) { TextButton(onClick = onBack) { Text("رجوع", color = Gold) } }')
+          row = '        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) { TextButton(onClick = onBack) { Text("رجوع", color = Gold) } }'
+          s = s.replace('Column(Modifier.fillMaxSize().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {', 'Column(Modifier.fillMaxSize().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {' + nl + row, 1)
+          s = s.replace('Column(Modifier.fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {', 'Column(Modifier.fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {' + nl + row, 1)
           p.write_text(s)
           PY2
       - name: Locate Android SDK tools
@@ -85,11 +72,9 @@ jobs:
           echo "SDKMANAGER=$SDKMANAGER" >> "$GITHUB_ENV"
           echo "$(dirname "$SDKMANAGER")" >> "$GITHUB_PATH"
       - name: Accept Android licenses
-        run: |
-          yes | "$SDKMANAGER" --licenses > /dev/null || true
+        run: yes | "$SDKMANAGER" --licenses > /dev/null || true
       - name: Install Android SDK packages
-        run: |
-          "$SDKMANAGER" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+        run: "$SDKMANAGER" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
       - name: Build debug APK
         working-directory: alf-non-native
         run: chmod +x ./gradlew && ./gradlew assembleDebug --no-daemon
@@ -100,6 +85,3 @@ jobs:
           path: alf-non-native/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
-
-
-
